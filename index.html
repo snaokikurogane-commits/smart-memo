@@ -3,29 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AIメモ</title>
+  <title>AIアイデアメモ</title>
   <style>
-    body { font-family: sans-serif; background: #f4f7f6; margin: 0; padding: 15px; color: #333; }
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f4f7f6; margin: 0; padding: 15px; color: #333; }
     
     /* 入力エリア */
     .input-box { position: relative; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    textarea { width: 100%; height: 80px; border: none; font-size: 16px; resize: none; outline: none; }
+    textarea { width: 100%; height: 80px; border: none; font-size: 16px; resize: none; outline: none; -webkit-appearance: none; }
     
-    .mic-btn { position: absolute; right: 15px; bottom: 15px; font-size: 24px; background: none; border: none; cursor: pointer; }
-    .mic-btn.recording { color: red; animation: pulse 1s infinite; }
-    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    .mic-btn { position: absolute; right: 10px; bottom: 50px; font-size: 24px; background: white; border: 1px solid #eee; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .mic-btn.recording { color: white; background: #ff4d4d; animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
     .send-btn { width: 100%; background: #333; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 10px; }
     .send-btn:disabled { background: #ccc; }
 
-    /* カテゴリフィルタ */
-    .filter-scroll { overflow-x: auto; white-space: nowrap; margin-bottom: 15px; padding-bottom: 5px; }
+    /* フィルタボタン */
+    .filter-scroll { overflow-x: auto; white-space: nowrap; margin-bottom: 15px; padding-bottom: 5px; -webkit-overflow-scrolling: touch; }
     .filter-btn { display: inline-block; padding: 6px 15px; margin-right: 8px; background: #e0e0e0; border-radius: 20px; font-size: 13px; cursor: pointer; }
     .filter-btn.active { background: #007bff; color: white; }
 
     /* メモリスト */
-    #memo-list { list-style: none; padding: 0; }
-    .memo-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-left: 5px solid #ccc; }
+    #memo-list { list-style: none; padding: 0; padding-bottom: 50px; }
+    .memo-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border-left: 5px solid #ccc; position: relative; }
     
     /* カテゴリ別の色 */
     .cat-仕事 { border-left-color: #007bff; }
@@ -34,19 +34,22 @@
     .cat-買い物 { border-left-color: #28a745; }
 
     .m-header { display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-bottom: 5px; }
-    .m-cat { font-weight: bold; color: #555; }
-    .m-content { font-size: 15px; line-height: 1.5; white-space: pre-wrap; }
-    .m-tags { margin-top: 8px; font-size: 11px; color: #007bff; }
+    .m-cat { font-weight: bold; color: #555; background: #eee; padding: 2px 6px; border-radius: 4px; }
+    .m-content { font-size: 15px; line-height: 1.5; white-space: pre-wrap; margin-bottom: 5px; }
+    .m-tags { font-size: 11px; color: #007bff; }
+    
+    /* 期限日表示 */
+    .m-deadline { font-size: 12px; font-weight: bold; color: #d63333; display: flex; align-items: center; margin-top: 5px; }
 
-    #loading { text-align: center; color: #999; display: none; }
+    #loading { text-align: center; color: #999; display: none; margin-top: 20px; }
   </style>
 </head>
 <body>
 
   <div class="input-box">
-    <textarea id="text-input" placeholder="思いついたことを話すか入力..."></textarea>
+    <textarea id="text-input" placeholder="思いついたことや予定を話してください..."></textarea>
     <button class="mic-btn" onclick="toggleVoice()">🎤</button>
-    <button class="send-btn" onclick="sendMemo()">AIに分類させて保存</button>
+    <button class="send-btn" onclick="sendMemo()">AI分析して保存</button>
   </div>
 
   <div class="filter-scroll">
@@ -61,8 +64,8 @@
   <ul id="memo-list"></ul>
 
   <script>
-    // ★新しいGASのURLを入れる
-    const API_URL = "https://script.google.com/macros/s/AKfycbx3A7iiRUXAGMlUjnY8oa8aIVqYQ0HKo8v0nf3IVcF6zaeW04hCqmAQ76d4U71OcqkMlA/exec";
+    // ★重要：ここに新しいGASのウェブアプリURLを貼り付けてください
+    const API_URL = "https://script.google.com/macros/s/AKfycbwaucNw_24Y55hRHMBXSYeasiuf0tB52plVXnOKi_d4sOyM8Ay26CHr9NqFzVqAPzY3Ow/exec";
     
     let allMemos = [];
 
@@ -74,7 +77,9 @@
         const res = await fetch(API_URL);
         allMemos = await res.json();
         renderMemos(allMemos);
-      } catch(e) { alert("Error"); }
+      } catch(e) { 
+        document.getElementById('loading').innerText = "読み込みエラー";
+      }
       document.getElementById('loading').style.display = 'none';
     }
 
@@ -84,6 +89,12 @@
       memos.forEach(m => {
         const li = document.createElement('li');
         li.className = `memo-card cat-${m.category}`;
+        
+        let deadlineHtml = "";
+        if (m.deadline) {
+          deadlineHtml = `<div class="m-deadline">⏰ 期限: ${m.deadline}</div>`;
+        }
+
         li.innerHTML = `
           <div class="m-header">
             <span class="m-cat">${m.category}</span>
@@ -91,6 +102,7 @@
           </div>
           <div class="m-content">${m.content}</div>
           <div class="m-tags">#${m.tags.replace(/ /g, ' #')}</div>
+          ${deadlineHtml}
         `;
         list.appendChild(li);
       });
@@ -102,8 +114,9 @@
       if(!text) return;
       
       const btn = document.querySelector('.send-btn');
+      const originalText = btn.innerText;
       btn.disabled = true;
-      btn.innerText = "AIが考え中...";
+      btn.innerText = "AIが分析中...";
 
       try {
         await fetch(API_URL, {
@@ -111,11 +124,12 @@
           body: JSON.stringify({ text: text })
         });
         document.getElementById('text-input').value = "";
-        await loadMemos(); // リスト再読み込み
+        alert("保存しました！");
+        await loadMemos(); 
       } catch(e) { alert("送信エラー"); }
       
       btn.disabled = false;
-      btn.innerText = "AIに分類させて保存";
+      btn.innerText = originalText;
     }
 
     // フィルタ機能
@@ -131,18 +145,28 @@
       }
     }
 
-    // 音声入力
+    // 音声入力機能
     let recognition;
     function toggleVoice() {
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert("このブラウザは音声入力に対応していません。");
+        return;
+      }
+      
       if (!recognition) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return alert("非対応です");
         recognition = new SpeechRecognition();
         recognition.lang = 'ja-JP';
+        recognition.interimResults = false;
+        
         recognition.onresult = (e) => {
-          document.getElementById('text-input').value += e.results[0][0].transcript;
+          const transcript = e.results[0][0].transcript;
+          document.getElementById('text-input').value += transcript;
         };
-        recognition.onend = () => document.querySelector('.mic-btn').classList.remove('recording');
+        
+        recognition.onend = () => {
+          document.querySelector('.mic-btn').classList.remove('recording');
+        };
       }
       
       const btn = document.querySelector('.mic-btn');
